@@ -1,7 +1,7 @@
 import { createServer } from "http";
 import { parse } from "url";
 import next from "next";
-import { setupWebSocket } from "./server/wsHandler.js";
+import { setupWebSocket } from "./server1/wsHandler.js";
 
 const dev = process.env.NODE_ENV !== "production";
 const app = next({ dev });

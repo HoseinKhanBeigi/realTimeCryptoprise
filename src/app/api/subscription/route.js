@@ -1,4 +1,4 @@
-import { addSubscription } from "../../../server/metrics.js";
+import { addSubscription } from "../../../../server1/metrics";
 
 export async function POST(req) {
   const subscription = await req.json();
