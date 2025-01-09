@@ -19,10 +19,10 @@ export default function CryptoWebSocket() {
 
   const alwaysIncludedSymbols = [
     "dogeusdt",
-    "pepeusdt",
-    "babydogeusdt",
-    "bobusdt",
-    "peopleusdt",
+    // "pepeusdt",
+    // "babydogeusdt",
+    // "bobusdt",
+    // "peopleusdt",
   ];
   const [symbols, setSymbols] = useState([]);
 
@@ -38,13 +38,12 @@ export default function CryptoWebSocket() {
         .slice(0, 50)
         .map((item) => item.symbol.toLowerCase());
 
-      const combinedSymbols = [
-        ...new Set([...topSymbols, ...alwaysIncludedSymbols]),
-      ];
+      const combinedSymbols = [...new Set([...alwaysIncludedSymbols])];
+
       setSymbols(combinedSymbols);
     };
-
-    fetchSymbols();
+    console.log("combinedSymbols");
+    // fetchSymbols();
   }, []);
 
   useEffect(() => {
