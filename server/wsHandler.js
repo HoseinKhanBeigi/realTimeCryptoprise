@@ -36,7 +36,7 @@ export function setupWebSocket(server) {
         const metrics = calculateMetrics(coinData[symbol]);
         console.log(`Metrics for ${symbol.toUpperCase()}:`, metrics);
 
-        if (metrics.avgVelocity > 10) {
+        if (metrics.avgVelocity > 0.3) {
           notifyOnHighVelocity(symbol, metrics.avgVelocity);
         }
 
