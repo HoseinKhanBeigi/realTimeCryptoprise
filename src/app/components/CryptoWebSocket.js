@@ -104,10 +104,7 @@ export default function CryptoWebSocket() {
           const result = calculateMetrics(coinData[symbol]);
           setMetrics((prev) => ({ ...prev, [symbol]: result }));
 
-          if (
-            result.avgVelocity > 10 &&
-            Notification.permission === "granted"
-          ) {
+          if (result.avgVelocity > 1 && Notification.permission === "granted") {
             new Notification("High Velocity Alert", {
               body: `Symbol: ${symbol.toUpperCase()} | Avg Velocity: ${result.avgVelocity.toFixed(
                 2
