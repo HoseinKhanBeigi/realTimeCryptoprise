@@ -1,6 +1,4 @@
-import { WebSocket } from 'ws';
 import axios from 'axios';
-
 
 // Telegram Service
 class TelegramService {
@@ -78,7 +76,6 @@ const telegramService = new TelegramService();
 const reconnectAttempts = 0;
 const maxReconnectAttempts = 5;
 
-
 function formatToInteger(price) {
   if (price >= 1) {
     return price;
@@ -137,36 +134,30 @@ function calculateMetrics(data, dt = 1) {
 function initializeWebSocket() {
   if (socket === null) {
     try {
-      socket = new WebSocket('wss://stream.binance.com:9443/ws', {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-        },
-        timeout: 30000,
-      });
+      socket = new globalThis.WebSocket('wss://stream.binance.com:9443/ws');
 
-      socket.on('open', () => {
-        console.log('✅ Connected to Binance WebSocket');
+      socket.onopen = () => {
+       
         const subscribeMessage = {
           method: 'SUBSCRIBE',
-          params: ['btcusdt@trade'], // Add more symbols as needed
+          params: ['btcusdt@trade'],
           id: 1
         };
         socket.send(JSON.stringify(subscribeMessage));
-      });
+      
+      };
 
-      socket.on('message', async (data) => {
+      socket.onmessage = async (event) => {
         try {
-          const parsed = JSON.parse(data.toString());
-          if (!parsed.data) return;
+          const parsed = JSON.parse(event.data);
+  
 
-          const stream = parsed.stream;
-          const symbol = stream.split('@')[0];
-          const trade = parsed.data;
-          const price = parseFloat(trade.p);
-          if (isNaN(price)) return;
+          const price = parsed.p;
+          if (!price) return;
 
-          const formattedPrice = formatToInteger(price);
+          const formattedPrice = formatToInteger(parseFloat(price));
           const now = Date.now();
+          const symbol = 'btcusdt';
 
           if (!coinData[symbol]) {
             coinData[symbol] = [];
@@ -176,10 +167,12 @@ function initializeWebSocket() {
           if (now - timestamps[symbol] >= 1000) {
             timestamps[symbol] = now;
             coinData[symbol].push(formattedPrice);
+            
 
             if (coinData[symbol].length >= 20) {
               const metrics = calculateMetrics(coinData[symbol]);
               latestMetrics[symbol] = metrics;
+            
 
               try {
                 await telegramService.sendMetricsUpdate(symbol, metrics, 193418752);
@@ -191,25 +184,20 @@ function initializeWebSocket() {
               console.log(`🔄 Reset data collection for ${symbol}`);
             }
           }
-
-          // Broadcast to all connected clients
-          clients.forEach(client => {
-            client.send(JSON.stringify({ price, metrics: latestMetrics[symbol] }));
-          });
         } catch (error) {
           console.error('❌ Error processing message:', error);
         }
-      });
+      };
 
-      socket.on('error', (error) => {
+      socket.onerror = (error) => {
         console.error('❌ WebSocket error:', error);
         handleReconnection();
-      });
+      };
 
-      socket.on('close', () => {
+      socket.onclose = () => {
         console.log('WebSocket connection closed');
         handleReconnection();
-      });
+      };
     } catch (error) {
       console.error('❌ Failed to create WebSocket connection:', error);
       handleReconnection();
@@ -231,13 +219,47 @@ initializeWebSocket();
 
 // Initialize the webhook when the module loads
 try {
-  const webhookUrl = `${process.env.VERCEL_URL || 'https://crypto-tracker-git-main-hoseinkhanbeigis-projects.vercel.app'}/api/telegram/webhook`;
-  telegramService.setWebhook(webhookUrl);
+  const webhookUrl = 'https://crypto-tracker-git-main-hoseinkhanbeigis-projects.vercel.app/api/telegram/webhook';
+  console.log('🔄 Attempting to set webhook URL:', webhookUrl);
+  await telegramService.setWebhook(webhookUrl);
   console.log('✅ Webhook set up successfully');
 } catch (error) {
   console.error('❌ Error setting up webhook:', error.message);
+  if (error.response) {
+    console.error('Error details:', error.response.data);
+  }
 }
 
+export async function GET(request) {
+  try {
+ 
+    
+    if (!socket || socket.readyState !== 1) {
+      console.log('🔄 WebSocket not connected, initializing...');
+      initializeWebSocket();
+    } else {
+      console.log('✅ WebSocket already connected');
+    }
+
+    console.log('📊 Current metrics:', latestMetrics);
+    
+    return new Response(JSON.stringify({ 
+      message: "Hello from API",
+      timestamp: new Date().toISOString(),
+      latestMetrics,
+      socketStatus: socket ? socket.readyState : 'no socket'
+    }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  } catch (error) {
+    console.error('❌ Error in GET handler:', error);
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+}
 
 export const config = {
   runtime: 'edge',
