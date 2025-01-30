@@ -1,6 +1,6 @@
 import { WebSocket } from 'ws';
 import axios from 'axios';
-import Pusher from 'pusher';
+
 
 // Telegram Service
 class TelegramService {
@@ -78,12 +78,6 @@ const telegramService = new TelegramService();
 const reconnectAttempts = 0;
 const maxReconnectAttempts = 5;
 
-const pusher = new Pusher({
-  appId: process.env.PUSHER_APP_ID,
-  key: process.env.PUSHER_KEY,
-  secret: process.env.PUSHER_SECRET,
-  cluster: process.env.PUSHER_CLUSTER,
-});
 
 function formatToInteger(price) {
   if (price >= 1) {
@@ -244,47 +238,6 @@ try {
   console.error('❌ Error setting up webhook:', error.message);
 }
 
-// Create a new API route to handle webhook updates
-export async function POST(req) {
-  if (req.url.includes('/api/telegram/webhook')) {
-    try {
-      const update = await req.json();
-      if (update.message) {
-        // Handle incoming Telegram messages
-        const chatId = update.message.chat.id;
-        const text = update.message.text;
-        
-        // Example: Echo the message back
-        await telegramService.sendMessage(chatId, `Received: ${text}`);
-      }
-      return new Response('OK', { status: 200 });
-    } catch (error) {
-      console.error('❌ Error handling webhook:', error);
-      return new Response('Error', { status: 500 });
-    }
-  }
-  
-  // Handle other POST requests...
-  const data = await req.json();
-  await pusher.trigger('crypto-channel', 'price-update', {
-    price: data.price,
-    metrics: data.metrics
-  });
-  return new Response(JSON.stringify({ success: true }));
-}
-
-export async function GET(request) {
-  // Upgrade the HTTP connection to WebSocket
-  const { socket: ws, response } = await request.body;
-  
-  clients.add(ws);
-
-  ws.on('close', () => {
-    clients.delete(ws);
-  });
-
-  return response;
-}
 
 export const config = {
   runtime: 'edge',
