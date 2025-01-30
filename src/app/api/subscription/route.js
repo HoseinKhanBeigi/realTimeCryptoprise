@@ -1,4 +1,3 @@
-import { addSubscription } from "../../../../server1/metrics";
 import { WebSocket } from 'ws';
 import axios from 'axios';
 import Pusher from 'pusher';
