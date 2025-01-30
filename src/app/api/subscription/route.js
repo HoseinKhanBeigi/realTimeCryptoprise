@@ -6,7 +6,19 @@ import Pusher from 'pusher';
 // Telegram Service
 class TelegramService {
   constructor() {
-    this.telegramApiUrl = `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}`;
+    this.telegramApiUrl = `https://api.telegram.org/bot7909173256:AAF9M8mc0QYmtO9SUYQPv6XkrPkAz2P_ImU`;
+  }
+
+  async setWebhook(url) {
+    try {
+      const response = await axios.post(`${this.telegramApiUrl}/setWebhook`, {
+        url,
+        allowed_updates: ['message'],
+      });
+      console.log('🎯 Webhook set response:', response.data);
+    } catch (error) {
+      console.error('❌ Failed to set webhook:', error.message);
+    }
   }
 
   async sendMessage(chatId, text) {
@@ -224,15 +236,41 @@ function handleReconnection() {
 // Initialize WebSocket connection immediately when the module loads
 initializeWebSocket();
 
+// Initialize the webhook when the module loads
+try {
+  const webhookUrl = `${process.env.VERCEL_URL || 'https://crypto-tracker-git-main-hoseinkhanbeigis-projects.vercel.app'}/api/telegram/webhook`;
+  telegramService.setWebhook(webhookUrl);
+  console.log('✅ Webhook set up successfully');
+} catch (error) {
+  console.error('❌ Error setting up webhook:', error.message);
+}
+
+// Create a new API route to handle webhook updates
 export async function POST(req) {
-  const data = await req.json();
+  if (req.url.includes('/api/telegram/webhook')) {
+    try {
+      const update = await req.json();
+      if (update.message) {
+        // Handle incoming Telegram messages
+        const chatId = update.message.chat.id;
+        const text = update.message.text;
+        
+        // Example: Echo the message back
+        await telegramService.sendMessage(chatId, `Received: ${text}`);
+      }
+      return new Response('OK', { status: 200 });
+    } catch (error) {
+      console.error('❌ Error handling webhook:', error);
+      return new Response('Error', { status: 500 });
+    }
+  }
   
-  // Broadcast the data to all connected clients
+  // Handle other POST requests...
+  const data = await req.json();
   await pusher.trigger('crypto-channel', 'price-update', {
     price: data.price,
     metrics: data.metrics
   });
-
   return new Response(JSON.stringify({ success: true }));
 }
 
