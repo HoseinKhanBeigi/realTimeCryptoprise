@@ -9,27 +9,17 @@ export default function Home() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch('/api/subscription');
+        const response = await fetch("/api/subscription");
         const json = await response.json();
         setData(json);
       } catch (err) {
         setError(err.message);
-        console.error('Error fetching data:', err);
+        console.error("Error fetching data:", err);
       }
     };
 
     fetchData();
   }, []);
 
-  return (
-    <main>
-      {error && <div>Error: {error}</div>}
-      {data && (
-        <pre>
-          {JSON.stringify(data, null, 2)}
-        </pre>
-      )}
-      {!data && !error && <div>Loading...</div>}
-    </main>
-  );
+  return <main>{<div>email...</div>}</main>;
 }
